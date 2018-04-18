@@ -113,11 +113,9 @@ public class FilteredProxyServer {
 					public void proxyToServerResolutionSucceeded(String serverHostAndPort,InetSocketAddress resolvedRemoteAddress) {
 						System.out.println("proxyToServerResolutionSucceeded");
 					}
-                    
                     /*
 					 * DNS Resolution with Destination host and port
 					 */
-					 
 					public InetSocketAddress proxyToServerResolutionStarted(String resolvingServerHostAndPort) {
 						System.out.println("proxyToServerResolutionStarted");
 						return new InetSocketAddress(SERVICE_HOST, SERVICE_HOST_PORT);
