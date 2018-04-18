@@ -1,41 +1,40 @@
 package com.capgemini.filters;
 
-import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Properties;
+
+import org.littleshoot.proxy.HttpFilters;
+import org.littleshoot.proxy.HttpFiltersAdapter;
+import org.littleshoot.proxy.HttpFiltersSource;
+import org.littleshoot.proxy.HttpFiltersSourceAdapter;
+import org.littleshoot.proxy.HttpProxyServer;
+import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
+
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Properties;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.littleshoot.proxy.HttpFilters;
-import org.littleshoot.proxy.HttpFiltersAdapter;
-import org.littleshoot.proxy.HttpFiltersSource;
-import org.littleshoot.proxy.HttpFiltersSourceAdapter;
-import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
+import io.netty.util.CharsetUtil;
 
 /*
- * Comments
+ * @Sirisha
+ * Custom Proxy Implementation
+ * Default Server Bootstrap 
  */
+ 
 public class FilteredProxyServer {
 
-
-	public static void main(String[] args) {
+	final int PORT;
+	private HttpProxyServer server =null;
+	final String SERVICE_HOST;
+	final int SERVICE_HOST_PORT;
+	public FilteredProxyServer() {
 		
 		Properties prop = new Properties();
 
@@ -46,13 +45,16 @@ public class FilteredProxyServer {
 		    ex.printStackTrace();
 		}
 		 String serverPort = prop.getProperty("server.port");
-	   
+		 SERVICE_HOST= prop.getProperty("servicehost");
+		 SERVICE_HOST_PORT=Integer.parseInt(prop.getProperty("servicehost.port"));
 	
-	   final int PORT = Integer.parseInt(serverPort);
-	   
+	   PORT = Integer.parseInt(serverPort);
+	}
+
+	public void startProxyServer() {
 		HttpFiltersSource filtersSource = getFiltersSource();
 		
-		DefaultHttpProxyServer
+		server=DefaultHttpProxyServer
 				.bootstrap()
 				.withPort(PORT)
 				.withAllowRequestToOriginServer(true)
@@ -61,17 +63,28 @@ public class FilteredProxyServer {
 				.withName("FilteringProxy")
 				.start();
 	}
-
+	public void stopServer() {
+		if(server!=null) {
+			server.stop();
+			server=null;
+		}
+	}
+	
+	public static void main(String args[]){
+		FilteredProxyServer fps = new FilteredProxyServer();
+		fps.startProxyServer();
+	}
+	
 	/*
-	 * Comments
+	 * HttpFilterscource invocation - HTTP Request Life cycle
 	 */
 
-	private static HttpFiltersSource getFiltersSource() {
+	private HttpFiltersSource getFiltersSource() {
         return new HttpFiltersSourceAdapter(){
 
         	 @Override
              public int getMaximumRequestBufferSizeInBytes() {
-                 return 1024 * 1024;
+                 return 0;//1024 * 1024;
              }
             public HttpFilters filterRequest(HttpRequest originalRequest) {
             	
@@ -87,6 +100,10 @@ public class FilteredProxyServer {
 					public void serverToProxyResponseReceived() {
 						System.out.println("serverToProxyResponseReceived");
 					}
+					
+					/*
+					 * ServertoProxy response
+					 */
 
 					public HttpObject serverToProxyResponse(HttpObject httpObject) {
 						System.out.println("serverToProxyResponse");
@@ -96,10 +113,12 @@ public class FilteredProxyServer {
 					public void proxyToServerResolutionSucceeded(String serverHostAndPort,InetSocketAddress resolvedRemoteAddress) {
 						System.out.println("proxyToServerResolutionSucceeded");
 					}
-
+                    /*
+					 * DNS Resolution with Destination host and port
+					 */
 					public InetSocketAddress proxyToServerResolutionStarted(String resolvingServerHostAndPort) {
 						System.out.println("proxyToServerResolutionStarted");
-						return new InetSocketAddress("localhost", 9081);
+						return new InetSocketAddress(SERVICE_HOST, SERVICE_HOST_PORT);
 						
 					}
 
@@ -136,39 +155,32 @@ public class FilteredProxyServer {
 						System.out.println("proxyToServerConnectionFailed");
 					}
 
-					
+					/*
+					 * ProxytoClientResponse
+					 */	
 					public HttpObject proxyToClientResponse(HttpObject httpObject) {
 						System.out.println("proxyToClientResponse");
 						return httpObject;
 					}
+					/*
+					 * ProxyToServer Request
+					 */	
 					public HttpResponse proxyToServerRequest(HttpObject httpObject) {
 						System.out.println("proxyToServerRequest");
-//						 if (httpObject instanceof FullHttpRequest) {
-//                            try {
-//
-//                            	FullHttpRequest res=(FullHttpRequest) httpObject;
-//    							ByteBuf content=res.content();
-//    							byte[] bytes = new byte[content.readableBytes()];
-//    							content.readBytes(bytes);
-//    							HttpHeaders headers=res.headers();
-//    							System.out.println("Request Data: \n"+new String(bytes));
-//    							
-//    							String contentType=headers.get("Content-Type");
-//    							if(contentType==null || !contentType.contains("xml")){
-//    								HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED);
-//    								return response;
-//    							}else{
-//    								return null;
-//    							}
-//							} 
-//                            catch (Exception e) {
-//								e.printStackTrace();
-//							}
-//                        }
+						if(httpObject instanceof HttpRequest) {
+                        	HttpHeaders headers=((HttpRequest) httpObject).headers();
+                        	String contentType=headers.get("Content-Type");
+							if(contentType==null || !contentType.contains("xml")){
+								HttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNAUTHORIZED, Unpooled.copiedBuffer(
+										 "Invalid Content Type".toString(), CharsetUtil.UTF_8));
+								response.headers().set("Connection", "close");
+								return response;
+							}else{
+								return null;
+							}
+                        }
 						return null;
 					}
-
-
 				};
 			}
 		};

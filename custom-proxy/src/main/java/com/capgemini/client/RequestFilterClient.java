@@ -20,6 +20,8 @@ public class RequestFilterClient {
 	/**
 	 * @param args
 	 */
+	// start little proxy
+	
 	public static void main(String[] args) {
 		RequestFilterClient clientFilter = new RequestFilterClient();
 		try {

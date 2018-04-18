@@ -1,5 +1,10 @@
 package proxyServerImplementation;
 
+/*
+ * @Sirisha 
+ * Greeting POJO - holds ID and Content 
+ */
+
 public class Greeting {
 
     private final long id;
