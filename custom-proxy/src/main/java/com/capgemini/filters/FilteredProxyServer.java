@@ -30,10 +30,10 @@ import io.netty.util.CharsetUtil;
  
 public class FilteredProxyServer {
 
-	final int PORT;
+	public final int PORT;
 	private HttpProxyServer server =null;
-	final String SERVICE_HOST;
-	final int SERVICE_HOST_PORT;
+	public final String SERVICE_HOST;
+	public final int SERVICE_HOST_PORT;
 	public FilteredProxyServer() {
 		
 		Properties prop = new Properties();
