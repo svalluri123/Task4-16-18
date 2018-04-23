@@ -1,4 +1,4 @@
-package com.capgemini.test;
+package com.capgemini.filters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -11,7 +11,6 @@ import java.net.URL;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.capgemini.filters.FilteredProxyServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 public class FilteredProxyServerTest {
@@ -31,7 +30,7 @@ public class FilteredProxyServerTest {
 	public void instantiateStartProxyServer(){
 		FilteredProxyServer server = new FilteredProxyServer();
 		server.startProxyServer();
-		String strUrl = "http://localhost:8100/testapp";	
+		String strUrl = "http://localhost:8100/greeting";	
 		HttpURLConnection urlConn = null;
 		 try {
 		        URL url = new URL(strUrl);
@@ -51,8 +50,8 @@ public class FilteredProxyServerTest {
 	public void instantiateStartProxyXMLTestServer(){
 		FilteredProxyServer server = new FilteredProxyServer();
 		server.startProxyServer();
-		String strUrl = "http://localhost:8100/testapp";	
-		stubFor(get(urlPathEqualTo("/testapp"))
+		String strUrl = "http://localhost:8100/greeting";	
+		stubFor(get(urlPathEqualTo("/greeting"))
 				  .willReturn(aResponse()
 				  .withStatus(200)
 				  .withHeader("Content-Type", "application/xml")

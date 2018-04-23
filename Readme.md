@@ -27,6 +27,8 @@ serverToProxyResponse returns the HttpObject to the Proxy server
 
 proxyToClientResponse returns the same HTTPObject from destination server to the client.
 
+Test case with wire mock, it mocks Spring boot server call and has three cases one to instantiate FilteredProxy server object, starting proxy server and to check the XML content.
+
 SpringBoot Application is the destination host which is used to accept the HTTP request from the FilteredProxy server
 
 Server class is annotated with @SpringBootApplication which itself gives runtime environment with embedded webserver. 
